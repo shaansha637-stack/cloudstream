@@ -22,6 +22,9 @@ jobs:
           cp -R _gen/ios ./ios
           rm -rf _gen
 
+      - name: Get packages
+        run: flutter pub get
+
       - name: Configure iOS
         run: |
           PLIST=ios/Runner/Info.plist
@@ -31,9 +34,12 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" "$PLIST"
           /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:0 string audio" "$PLIST"
           sed -i '' "s/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 15.0;/g" ios/Runner.xcodeproj/project.pbxproj
-          sed -i '' -E "s/^#? ?platform :ios, .*/platform :ios, '15.0'/" ios/Podfile
-
-      - run: flutter pub get
+          if [ -f ios/Podfile ]; then
+            sed -i '' -E "s/^#? ?platform :ios, .*/platform :ios, '15.0'/" ios/Podfile
+            grep "platform :ios" ios/Podfile
+          else
+            echo "No Podfile yet, Flutter will create it during the build"
+          fi
 
       - name: Build (unsigned)
         run: flutter build ios --release --no-codesign
